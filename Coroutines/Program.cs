@@ -25,17 +25,19 @@ namespace Coroutines
         private static void RandomlyWritetoInputs(SocketInput[] inputs)
         {
             var scheduler = new Scheduler(inputs.Length);
+            var random = new Random();
 
             while (!scheduler.AllDone)
             {
                 // This isn't very random
-                int next = 0;
-                for (; next < inputs.Length; next++)
+                int next = random.Next(inputs.Length - 1);
+                for (int i = 0; i < inputs.Length; ++i)
                 {
                     if (!scheduler.IsFinished(next))
                     {
                         break;
                     }
+                    next = (next + 1) % inputs.Length;
                 }
 
                 Scheduler.CurrentSlot = next;
