@@ -95,14 +95,20 @@ namespace Coroutines
                 await scheduler;
             }
 
-            // TODO: Figure out why this blows up
-            // input.IncomingComplete(completed: true, error: null);
+            input.IncomingComplete(completed: true, error: null);
         }
 
         private static async void Consume(SocketInput input)
         {
-            while (!input.DataComplete)
+            while (true)
             {
+                await input;
+
+                if (input.DataComplete)
+                {
+                    break;
+                }
+
                 var reader = new SocketInputTextReader(input, Encoding.UTF8);
                 var jsonReader = new JsonTextReader(reader);
                 var obj = await JObject.ReadFromAsync(jsonReader, new JsonLoadSettings() { });
