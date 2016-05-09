@@ -36,28 +36,22 @@ namespace Coroutines
 
         public void OnCompleted(Action continuation)
         {
-            _state[CurrentSlot] = new State
-            {
-                Callback = continuation
-            };
+            _state[CurrentSlot].Callback = continuation;
         }
 
         public void UnsafeOnCompleted(Action continuation)
         {
-            _state[CurrentSlot] = new State
-            {
-                Callback = continuation
-            };
+            _state[CurrentSlot].Callback = continuation;
         }
 
         public bool IsFinished(int slot)
         {
-            return _state[slot]?.Completed == true;
+            return _state[slot].Completed == true;
         }
 
         public bool HasContinuation(int slot)
         {
-            return _state[slot]?.Callback != null;
+            return _state[slot].Callback != null;
         }
 
         public Action GetContinuation(int slot)
