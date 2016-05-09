@@ -24,6 +24,21 @@ namespace Coroutines
 
         private static void RandomlyWritetoInputs(SocketInput[] inputs)
         {
+
+            var jsonData = JsonConvert.SerializeObject(new
+            {
+                X = 1,
+                Y = 45,
+                M = new[] { 1, 3, 5 },
+                Z = new
+                {
+                    Name = "David",
+                    Age = 29
+                }
+            });
+
+            var data = Encoding.UTF8.GetBytes(jsonData);
+
             var scheduler = new Scheduler(inputs.Length);
             var random = new Random();
 
@@ -47,7 +62,7 @@ namespace Coroutines
                 if (continuation == null)
                 {
                     var input = inputs[next];
-                    Produce(input, scheduler);
+                    Produce(input, scheduler, data);
                 }
                 else
                 {
@@ -62,21 +77,8 @@ namespace Coroutines
             }
         }
 
-        private static async void Produce(SocketInput input, Scheduler scheduler)
+        private static async void Produce(SocketInput input, Scheduler scheduler, byte[] data)
         {
-            var jsonData = JsonConvert.SerializeObject(new
-            {
-                X = 1,
-                Y = 45,
-                M = new[] { 1, 3, 5 },
-                Z = new
-                {
-                    Name = "David",
-                    Age = 29
-                }
-            });
-
-            var data = Encoding.UTF8.GetBytes(jsonData);
             int at = 0;
             int increment = 1;
 
@@ -103,7 +105,6 @@ namespace Coroutines
             while (true)
             {
                 await input;
-
                 if (input.DataComplete)
                 {
                     break;
