@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -10,7 +13,6 @@ namespace Coroutines
         static void Main(string[] args)
         {
             var pool = new MemoryPool();
-
             var inputs = new SocketInput[100];
             for (int i = 0; i < inputs.Length; i++)
             {
@@ -21,7 +23,7 @@ namespace Coroutines
 
             RandomlyWritetoInputs(inputs);
         }
-
+        
         private static void RandomlyWritetoInputs(SocketInput[] inputs)
         {
 
@@ -39,45 +41,25 @@ namespace Coroutines
 
             var data = Encoding.UTF8.GetBytes(jsonData);
 
-            var scheduler = new Scheduler(inputs.Length);
+            var scheduler = new Scheduler(inputs, (input, iterator) => Produce(input, iterator, data));
             var random = new Random();
 
-            while (!scheduler.AllDone)
+            while (!scheduler.Completed)
             {
-                // This isn't very random
                 int next = random.Next(inputs.Length - 1);
                 for (int i = 0; i < inputs.Length; ++i)
                 {
-                    if (!scheduler.IsFinished(next))
+                    if (scheduler.Run(next))
                     {
                         break;
                     }
                     next = (next + 1) % inputs.Length;
                 }
 
-                Scheduler.CurrentSlot = next;
-
-                var continuation = scheduler.GetContinuation(next);
-
-                if (continuation == null)
-                {
-                    var input = inputs[next];
-                    Produce(input, scheduler, data);
-                }
-                else
-                {
-                    continuation();
-                }
-
-                if (!scheduler.HasContinuation(next))
-                {
-                    // Done!
-                    scheduler.MarkCompleted(next);
-                }
             }
         }
 
-        private static async void Produce(SocketInput input, Scheduler scheduler, byte[] data)
+        private static async void Produce(SocketInput input, Iterator iterator, byte[] data)
         {
             int at = 0;
             int increment = 1;
@@ -93,8 +75,8 @@ namespace Coroutines
                 input.IncomingComplete(iter, completed: false, error: null);
                 at += increment;
 
-                // Give up our quantum
-                await scheduler;
+                // Yield
+                await iterator;
             }
 
             input.IncomingComplete(completed: true, error: null);

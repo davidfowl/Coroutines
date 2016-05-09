@@ -7,72 +7,20 @@ using System.Threading.Tasks;
 
 namespace Coroutines
 {
-    public class Scheduler : ICriticalNotifyCompletion
+    public class Scheduler
     {
-        [ThreadStatic]
-        public static int CurrentSlot;
-
         private readonly State[] _state;
-        public Scheduler(int slots)
+
+        public Scheduler(SocketInput[] inputs, Action<SocketInput, Iterator> callback)
         {
-            _state = new State[slots];
+            _state = new State[inputs.Length];
             for (int i = 0; i < _state.Length; i++)
             {
-                _state[i] = new State();
+                _state[i] = new State(inputs[i], callback);
             }
         }
 
-        public bool IsCompleted => false;
-
-        public void GetResult()
-        {
-
-        }
-
-        public Scheduler GetAwaiter()
-        {
-            return this;
-        }
-
-        public void OnCompleted(Action continuation)
-        {
-            _state[CurrentSlot].Callback = continuation;
-        }
-
-        public void UnsafeOnCompleted(Action continuation)
-        {
-            _state[CurrentSlot].Callback = continuation;
-        }
-
-        public bool IsFinished(int slot)
-        {
-            return _state[slot].Completed == true;
-        }
-
-        public bool HasContinuation(int slot)
-        {
-            return _state[slot].Callback != null;
-        }
-
-        public Action GetContinuation(int slot)
-        {
-            var state = _state[slot];
-            Action cb = null;
-
-            if (state.Callback != null)
-            {
-                cb = state.Callback;
-                state.Callback = null;
-            }
-            return cb;
-        }
-
-        public void MarkCompleted(int slot)
-        {
-            _state[slot].Completed = true;
-        }
-
-        public bool AllDone
+        public bool Completed
         {
             get
             {
@@ -86,11 +34,32 @@ namespace Coroutines
                 return true;
             }
         }
+        public bool Run(int slot)
+        {
+            var state = _state[slot];
+
+            if (state.Completed)
+            {
+                return false;
+            }
+
+            if (state.Iterator.MoveNext())
+            {
+                return true;
+            }
+            state.Completed = true;
+            return false;
+        }
 
         private class State
         {
             public bool Completed;
-            public Action Callback;
+            public Iterator Iterator;
+
+            public State(SocketInput socketInput, Action<SocketInput, Iterator> callback)
+            {
+                Iterator = new Iterator(iter => callback(socketInput, iter));
+            }
         }
     }
 }
