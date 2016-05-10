@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -41,7 +42,7 @@ namespace Coroutines
 
             var data = Encoding.UTF8.GetBytes(jsonData);
 
-            var scheduler = new Scheduler(inputs, (input, iterator) => Produce(input, iterator, data));
+            var scheduler = new Scheduler(inputs, input => Produce(input, data));
             var random = new Random();
 
             while (!scheduler.Completed)
@@ -59,7 +60,7 @@ namespace Coroutines
             }
         }
 
-        private static async void Produce(SocketInput input, Iterator iterator, byte[] data)
+        private static async void Produce(SocketInput input, byte[] data)
         {
             int at = 0;
             int increment = 1;
@@ -76,7 +77,7 @@ namespace Coroutines
                 at += increment;
 
                 // Yield
-                await iterator;
+                await Task.Yield();
             }
 
             input.IncomingComplete(completed: true, error: null);
@@ -87,6 +88,7 @@ namespace Coroutines
             while (true)
             {
                 await input;
+
                 if (input.DataComplete)
                 {
                     break;

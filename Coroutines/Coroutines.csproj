@@ -54,7 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IMemoryPool.cs" />
-    <Compile Include="Iterator.cs" />
+    <Compile Include="AsyncIterator.cs" />
     <Compile Include="MemoryPool.cs" />
     <Compile Include="MemoryPoolIterator.cs" />
     <Compile Include="Program.cs" />

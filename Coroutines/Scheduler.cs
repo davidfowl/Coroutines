@@ -11,7 +11,7 @@ namespace Coroutines
     {
         private readonly State[] _state;
 
-        public Scheduler(SocketInput[] inputs, Action<SocketInput, Iterator> callback)
+        public Scheduler(SocketInput[] inputs, Action<SocketInput> callback)
         {
             _state = new State[inputs.Length];
             for (int i = 0; i < _state.Length; i++)
@@ -54,11 +54,11 @@ namespace Coroutines
         private class State
         {
             public bool Completed;
-            public Iterator Iterator;
+            public AsyncIterator Iterator;
 
-            public State(SocketInput socketInput, Action<SocketInput, Iterator> callback)
+            public State(SocketInput socketInput, Action<SocketInput> callback)
             {
-                Iterator = new Iterator(iter => callback(socketInput, iter));
+                Iterator = new AsyncIterator(() => callback(socketInput));
             }
         }
     }
