@@ -10,6 +10,7 @@ namespace Coroutines
     public class Scheduler
     {
         private readonly State[] _state;
+        private int _completed;
 
         public Scheduler(SocketInput[] inputs, Action<SocketInput> callback)
         {
@@ -24,14 +25,7 @@ namespace Coroutines
         {
             get
             {
-                for (int i = 0; i < _state.Length; i++)
-                {
-                    if (!_state[i].Completed)
-                    {
-                        return false;
-                    }
-                }
-                return true;
+                return _completed == _state.Length;
             }
         }
         public bool Run(int slot)
@@ -47,7 +41,9 @@ namespace Coroutines
             {
                 return true;
             }
+
             state.Completed = true;
+            _completed++;
             return false;
         }
 

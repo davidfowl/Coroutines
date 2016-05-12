@@ -24,10 +24,49 @@ namespace Coroutines
 
             RandomlyWritetoInputs(inputs);
         }
-        
+
+        private static async void Produce(SocketInput input, byte[] data)
+        {
+            int at = 0;
+            int increment = 1;
+
+            while (at < data.Length)
+            {
+                var iter = input.IncomingStart();
+
+                int length = Math.Min(increment, data.Length - at);
+
+                iter.CopyFrom(data, at, length);
+
+                input.IncomingComplete(iter, completed: false, error: null);
+                at += increment;
+
+                await Task.Yield();
+            }
+
+            input.IncomingComplete(completed: true, error: null);
+        }
+
+        private static async void Consume(SocketInput input)
+        {
+            while (true)
+            {
+                await input;
+
+                if (input.DataComplete)
+                {
+                    break;
+                }
+
+                var reader = new SocketInputTextReader(input, Encoding.UTF8);
+                var jsonReader = new JsonTextReader(reader);
+                var obj = await JObject.ReadFromAsync(jsonReader, new JsonLoadSettings() { });
+                Console.WriteLine(obj);
+            }
+        }
+
         private static void RandomlyWritetoInputs(SocketInput[] inputs)
         {
-
             var jsonData = JsonConvert.SerializeObject(new
             {
                 X = 1,
@@ -57,47 +96,6 @@ namespace Coroutines
                     next = (next + 1) % inputs.Length;
                 }
 
-            }
-        }
-
-        private static async void Produce(SocketInput input, byte[] data)
-        {
-            int at = 0;
-            int increment = 1;
-
-            while (at < data.Length)
-            {
-                var iter = input.IncomingStart();
-
-                int length = Math.Min(increment, data.Length - at);
-
-                iter.CopyFrom(data, at, length);
-
-                input.IncomingComplete(iter, completed: false, error: null);
-                at += increment;
-
-                // Yield
-                await Task.Yield();
-            }
-
-            input.IncomingComplete(completed: true, error: null);
-        }
-
-        private static async void Consume(SocketInput input)
-        {
-            while (true)
-            {
-                await input;
-
-                if (input.DataComplete)
-                {
-                    break;
-                }
-
-                var reader = new SocketInputTextReader(input, Encoding.UTF8);
-                var jsonReader = new JsonTextReader(reader);
-                var obj = await JObject.ReadFromAsync(jsonReader, new JsonLoadSettings() { });
-                Console.WriteLine(obj);
             }
         }
     }

@@ -33,7 +33,7 @@ namespace Coroutines
         public override int Read()
         {
             var scan = _input.ConsumingStart();
-            int took = scan.Peek();
+            int took = scan.Take();
             _input.ConsumingComplete(scan, scan);
             return took;
         }
